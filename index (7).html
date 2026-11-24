@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>Boma</title>
+<meta name="theme-color" content="#2d3d8f">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<style>
+  :root{--bg:#0e1424;--panel:#161f33;--panel2:#1d2840;--ink:#eef2fa;--mut:#9fb0c6;--mut2:#6b7a93;--line:#28344e;--indigo:#5a7bff;--green:#37d98a;--gold:#f5c451;--red:#ff6b6b;--mono:ui-monospace,Menlo,Consolas,monospace;}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  body{min-height:100vh;display:flex;justify-content:center}
+  #app{width:100%;max-width:460px;min-height:100vh;background:var(--bg);display:flex;flex-direction:column}
+  .bar{display:flex;align-items:center;justify-content:space-between;padding:15px 18px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:5}
+  .wm{font-weight:800;letter-spacing:3px;font-size:15px;display:flex;align-items:center;gap:8px}
+  .wm .d{width:10px;height:10px;border-radius:3px;background:var(--indigo)}
+  .lo{background:none;border:0;color:var(--mut2);font-size:12px;cursor:pointer}
+  .tabs{display:flex;gap:4px;padding:10px 14px;overflow-x:auto;border-bottom:1px solid var(--line)}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{white-space:nowrap;background:none;border:0;color:var(--mut);font-size:13px;font-weight:700;padding:8px 13px;border-radius:9px;cursor:pointer;font-family:inherit}
+  .tab.on{background:var(--panel2);color:var(--ink)}
+  .tab .b{background:var(--red);color:#fff;border-radius:999px;font-size:10px;padding:1px 6px;margin-left:5px;font-family:var(--mono)}
+  .scr{flex:1;padding:16px 16px 40px}
+  h1{font-size:21px;margin:0 0 14px;letter-spacing:-.3px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px}
+  .tile{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:15px}
+  .tile .n{font-family:var(--mono);font-size:26px;font-weight:800;letter-spacing:-1px}
+  .tile .l{color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-top:3px;font-weight:700}
+  .tile.a .n{color:var(--green)}.tile.b .n{color:var(--gold)}.tile.c .n{color:var(--indigo)}.tile.d .n{color:var(--red)}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:15px;margin-bottom:11px}
+  .card h3{margin:0 0 3px;font-size:16px}
+  .card .meta{color:var(--mut);font-size:12.5px;line-height:1.5}
+  .card .meta b{color:var(--ink);font-weight:600}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:999px;letter-spacing:.3px}
+  .pill.live{background:rgba(55,217,138,.16);color:var(--green)}
+  .pill.lapsed{background:rgba(255,107,107,.16);color:var(--red)}
+  .pill.soon{background:rgba(245,196,81,.16);color:var(--gold)}
+  .row2{display:flex;gap:9px;margin-top:12px}
+  .btn{flex:1;border:0;border-radius:10px;padding:12px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit}
+  .btn.ok{background:var(--green);color:#042016}.btn.no{background:transparent;color:var(--mut);border:1px solid var(--line)}
+  .btn.renew{background:var(--indigo);color:#fff}
+  .btn.wide{width:100%}
+  .btn:active{transform:scale(.98)}
+  .empty{color:var(--mut2);text-align:center;padding:40px 10px;font-size:14px}
+  .err{background:rgba(255,107,107,.12);border:1px solid rgba(255,107,107,.3);color:#ffb4b4;border-radius:11px;padding:12px;font-size:13px;margin-top:10px}
+  /* login */
+  .login{padding:60px 24px;text-align:center}
+  .login .mark{font-size:30px;font-weight:800;letter-spacing:6px;color:var(--ink);margin-bottom:6px}
+  .login p{color:var(--mut);font-size:14px;margin:0 0 24px;line-height:1.5}
+  input.pw{width:100%;padding:15px;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:12px;font-size:15px;font-family:var(--mono);text-align:center}
+  .login .btn{margin-top:12px;background:var(--indigo);color:#fff;width:100%}
+  .foot{color:var(--mut2);font-size:11px;text-align:center;padding:16px;line-height:1.5}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="bar"><div class="wm"><span class="d"></span> BOMA</div><button class="lo" id="logout" style="display:none">log out</button></div>
+  <div class="tabs" id="tabs" style="display:none"></div>
+  <div class="scr" id="scr"></div>
+  <div class="foot" id="foot"></div>
+</div>
+<script>
+const CFG=window.BOMA_CFG||{};
+let sb=null; try{ sb=window.supabase.createClient(CFG.supabaseUrl,CFG.supabaseKey);}catch(e){}
+let S=load();
+function load(){try{return JSON.parse(sessionStorage.getItem('boma'))||{}}catch(e){return{}}}
+function save(){try{sessionStorage.setItem('boma',JSON.stringify(S))}catch(e){}}
+const TABS=[['overview','Overview'],['pending','Pending'],['pro','Pro'],['trackers','Trackers'],['listings','Listings'],['inbox','Inbox']];
+const fmt=n=>Number(n||0).toLocaleString('en-KE');
+
+async function A(fn,extra){ const {data,error}=await sb.rpc(fn,Object.assign({secret:S.secret},extra||{})); if(error)throw error; return data; }
+
+document.getElementById('logout').onclick=()=>{ S={}; save(); render(); };
+
+async function doLogin(){
+  const pw=(document.getElementById('pw')||{}).value||'';
+  if(!pw)return;
+  S.secret=(pw||'').trim();
+  const el=document.getElementById('scr');
+  try{ await A('admin_overview'); S.authed=true; save(); go('overview'); }
+  catch(e){ S.secret=null; save(); const m=(e&&(e.message||e.error_description||e.hint))||String(e); const c=(e&&e.code)||'';
+    el.querySelector('#loginerr').innerHTML='<div class="err"><b>Real error:</b><br>'+m+(c?'<br>code: '+c:'')+'</div>'; }
+}
+function go(tab){ S.tab=tab; save(); render(); }
+
+function render(){
+  const authed=S.authed&&S.secret;
+  document.getElementById('logout').style.display=authed?'block':'none';
+  document.getElementById('tabs').style.display=authed?'flex':'none';
+  document.getElementById('foot').textContent=authed?'Boma · one passphrase unlocks this. Keep it private; share only with trusted ops.':'';
+  if(!authed){ renderLogin(); return; }
+  const t=S.tab||'overview';
+  document.getElementById('tabs').innerHTML=TABS.map(([k,l])=>`<button class="tab ${t===k?'on':''}" data-tab="${k}">${l}${k==='pending'&&S.pendN?'<span class="b">'+S.pendN+'</span>':''}${k==='pro'&&S.proN?'<span class="b">'+S.proN+'</span>':''}${k==='trackers'&&S.trkN?'<span class="b">'+S.trkN+'</span>':''}</button>`).join('');
+  document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>go(b.dataset.tab));
+  ({overview:vOverview,pending:vPending,pro:vPro,trackers:vTrackers,listings:vListings,inbox:vInbox}[t]||vOverview)();
+}
+
+function renderLogin(){
+  document.getElementById('scr').innerHTML=`
+  <div class="login">
+    <div class="mark">BOMA</div>
+    <p>Ops console for Polaris + Viwanda.<br>Enter your admin passphrase.</p>
+    <input class="pw" id="pw" type="password" placeholder="passphrase" autocomplete="off">
+    <button class="btn" id="go">Enter</button>
+    <div id="loginerr"></div>
+  </div>`;
+  document.getElementById('go').onclick=doLogin;
+  const pw=document.getElementById('pw'); pw.focus(); pw.onkeydown=e=>{if(e.key==='Enter')doLogin();};
+}
+
+async function vOverview(){
+  const el=document.getElementById('scr'); el.innerHTML='<h1>Overview</h1><div class="empty">Loading…</div>';
+  try{
+    const d=(await A('admin_overview'))[0]||{};
+    S.pendN=d.pending; save();
+    el.innerHTML=`<h1>Overview</h1>
+    <div class="grid">
+      <div class="tile c"><div class="n">${fmt(d.shops)}</div><div class="l">Polaris shops</div></div>
+      <div class="tile a"><div class="n">${fmt(d.live_makers)}</div><div class="l">live makers</div></div>
+      <div class="tile b"><div class="n">${fmt(d.pending)}</div><div class="l">pending</div></div>
+      <div class="tile d"><div class="n">${fmt(d.lapsed)}</div><div class="l">lapsed</div></div>
+    </div>
+    <div class="grid">
+      <div class="tile a"><div class="n">KES ${fmt(d.mrr)}</div><div class="l">monthly (live × 1,500)</div></div>
+      <div class="tile b"><div class="n">${fmt(d.open_inquiries)}</div><div class="l">open inquiries</div></div>
+    </div>
+    ${d.pending>0?`<button class="btn ok wide" style="margin-top:6px" data-tab="pending">Work the ${d.pending} pending →</button>`:'<div class="foot" style="padding:18px 0">Nothing pending. Clean board. ✦</div>'}`;
+    document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>go(b.dataset.tab));
+  }catch(e){ el.innerHTML='<h1>Overview</h1><div class="err">'+(e.message||e)+'</div>'; }
+}
+
+async function vPending(){
+  const el=document.getElementById('scr'); el.innerHTML='<h1>Pending</h1><div class="empty">Loading…</div>';
+  try{
+    const rows=await A('admin_pending'); S.pendN=rows.length; save();
+    if(!rows.length){ el.innerHTML='<h1>Pending</h1><div class="empty">No submissions waiting. 🎉</div>'; return; }
+    el.innerHTML='<h1>Pending · '+rows.length+'</h1>'+rows.map(r=>`
+      <div class="card" id="p-${r.id}">
+        <h3>${r.brand_name||'(no name)'}</h3>
+        <div class="meta">${r.category?'<b>'+r.category+'</b> · ':''}${r.products||''}<br>
+        ${r.phone?'📞 <b>'+r.phone+'</b> · ':''}${r.mpesa_code?'code '+r.mpesa_code+' · ':''}KES ${fmt(r.amount)}<br>
+        ${r.coverage?r.coverage+' · ':''}<span style="color:var(--mut2)">${new Date(r.created_at).toLocaleString('en-KE')}</span></div>
+        <div class="row2">
+          <button class="btn ok" data-confirm="${r.id}">✓ Confirm &amp; list</button>
+          <button class="btn no" data-reject="${r.id}">Reject</button>
+        </div>
+      </div>`).join('');
+    document.querySelectorAll('[data-confirm]').forEach(b=>b.onclick=async()=>{ b.textContent='…'; try{ await A('admin_confirm',{p_id:b.dataset.confirm}); document.getElementById('p-'+b.dataset.confirm).remove(); refreshBadge(); }catch(e){ alert(e.message||e); b.textContent='✓ Confirm & list'; } });
+    document.querySelectorAll('[data-reject]').forEach(b=>b.onclick=async()=>{ if(!confirm('Reject this submission?'))return; try{ await A('admin_reject',{p_id:b.dataset.reject}); document.getElementById('p-'+b.dataset.reject).remove(); refreshBadge(); }catch(e){ alert(e.message||e); } });
+  }catch(e){ el.innerHTML='<h1>Pending</h1><div class="err">'+(e.message||e)+'</div>'; }
+}
+async function refreshBadge(){ try{ const d=(await A('admin_overview'))[0]||{}; S.pendN=d.pending; save(); render(); }catch(e){} }
+
+async function vPro(){
+  const el=document.getElementById('scr'); el.innerHTML='<h1>Pro payments</h1><div class="empty">Loading…</div>';
+  try{
+    const rows=await A('admin_pro_pending'); S.proN=rows.length; save();
+    if(!rows.length){ el.innerHTML='<h1>Pro payments</h1><div class="empty">No Pro payments waiting. 🎉</div>'; return; }
+    el.innerHTML='<h1>Pro payments · '+rows.length+'</h1>'+rows.map(r=>`
+      <div class="card" id="pr-${r.id}">
+        <h3>📞 ${r.phone||'(no phone)'}</h3>
+        <div class="meta"><b>${r.tier==='proplus'?'Pro+ · KES 5,000':'Pro · KES 3,500'}</b><br>
+        ${r.mpesa_code?'code <b>'+r.mpesa_code+'</b> · ':''}<span style="color:var(--mut2)">${new Date(r.created_at).toLocaleString('en-KE')}</span></div>
+        <div class="row2">
+          <button class="btn ok" data-pconfirm="${r.id}">✓ Confirm &amp; unlock</button>
+          <button class="btn no" data-preject="${r.id}">Reject</button>
+        </div>
+      </div>`).join('');
+    document.querySelectorAll('[data-pconfirm]').forEach(b=>b.onclick=async()=>{ b.textContent='…'; try{ await A('admin_pro_confirm',{p_id:b.dataset.pconfirm}); document.getElementById('pr-'+b.dataset.pconfirm).remove(); S.proN=Math.max(0,(S.proN||1)-1); save(); render(); }catch(e){ alert(e.message||e); b.textContent='✓ Confirm & unlock'; } });
+    document.querySelectorAll('[data-preject]').forEach(b=>b.onclick=async()=>{ if(!confirm('Reject this payment?'))return; try{ await A('admin_pro_reject',{p_id:b.dataset.preject}); document.getElementById('pr-'+b.dataset.preject).remove(); S.proN=Math.max(0,(S.proN||1)-1); save(); render(); }catch(e){ alert(e.message||e); } });
+  }catch(e){ el.innerHTML='<h1>Pro payments</h1><div class="err">'+(e.message||e)+'</div>'; }
+}
+
+async function vTrackers(){
+  const el=document.getElementById('scr'); el.innerHTML='<h1>Trackers</h1><div class="empty">Loading…</div>';
+  try{
+    let on=true; try{ const r=await sb.rpc('tracker_enabled',{p_app:'polaris-pro'}); on=(r&&r.data!==false); }catch(e){}
+    const rows=await A('admin_tracker_notes'); S.trkN=rows.length; save();
+    const head='<h1>Trackers</h1>'+
+      '<div class="card"><div class="row2" style="margin-top:0;align-items:center">'+
+      '<div style="flex:1">🧭 Compass · Polaris Pro<br><span style="color:var(--mut);font-size:12.5px">'+(on?'On — helping shops':'Off')+'</span></div>'+
+      '<button class="btn '+(on?'no':'ok')+'" style="flex:none;min-width:98px" data-toggle="'+(on?'off':'on')+'">'+(on?'Turn off':'Turn on')+'</button></div></div>';
+    const body = rows.length ? rows.map(r=>`
+      <div class="card" id="t-${r.id}">
+        <div class="meta"><b>${r.kind||'note'}</b> · <span style="color:var(--mut2)">${r.screen||'—'} · ${new Date(r.created_at).toLocaleString('en-KE')}</span><br>
+        ${r.body||''}${r.phone?'<br>📞 '+r.phone:''}</div>
+        <div class="row2"><button class="btn ok" data-done="${r.id}">Mark done</button></div>
+      </div>`).join('') : '<div class="empty">No notes from the compass yet.</div>';
+    el.innerHTML=head+body;
+    document.querySelectorAll('[data-toggle]').forEach(b=>b.onclick=async()=>{ b.textContent='…'; try{ await A('admin_tracker_toggle',{p_app:'polaris-pro',p_on:b.dataset.toggle==='on'}); vTrackers(); }catch(e){ alert(e.message||e); } });
+    document.querySelectorAll('[data-done]').forEach(b=>b.onclick=async()=>{ try{ await A('admin_tracker_resolve',{p_id:b.dataset.done}); document.getElementById('t-'+b.dataset.done).remove(); S.trkN=Math.max(0,(S.trkN||1)-1); save(); render(); }catch(e){ alert(e.message||e); } });
+  }catch(e){ el.innerHTML='<h1>Trackers</h1><div class="err">'+(e.message||e)+'</div>'; }
+}
+
+async function vListings(){
+  const el=document.getElementById('scr'); el.innerHTML='<h1>Listings</h1><div class="empty">Loading…</div>';
+  try{
+    const rows=await A('admin_listings');
+    if(!rows.length){ el.innerHTML='<h1>Listings</h1><div class="empty">No makers listed yet.</div>'; return; }
+    el.innerHTML='<h1>Listings · '+rows.length+'</h1>'+rows.map(r=>{
+      const soon=r.state==='live'&&r.days_left<=5;
+      const pill=r.state==='live'?(soon?'<span class="pill soon">expires in '+r.days_left+'d</span>':'<span class="pill live">live · '+r.days_left+'d</span>'):'<span class="pill lapsed">lapsed</span>';
+      return `<div class="card" id="l-${r.id}"><h3>${r.name||'(no name)'}</h3>
+        <div class="meta">${r.category?'<b>'+r.category+'</b> · ':''}${r.phone||''} ${pill}</div>
+        ${(r.state!=='live'||soon)?`<div class="row2"><button class="btn renew" data-renew="${r.id}">Renew 30 days</button></div>`:''}</div>`;
+    }).join('');
+    document.querySelectorAll('[data-renew]').forEach(b=>b.onclick=async()=>{ b.textContent='…'; try{ await A('admin_renew',{l_id:b.dataset.renew}); vListings(); }catch(e){ alert(e.message||e); } });
+  }catch(e){ el.innerHTML='<h1>Listings</h1><div class="err">'+(e.message||e)+'</div>'; }
+}
+
+async function vInbox(){
+  const el=document.getElementById('scr'); el.innerHTML='<h1>Inbox</h1><div class="empty">Loading…</div>';
+  try{
+    const rows=await A('admin_inquiries');
+    if(!rows.length){ el.innerHTML='<h1>Inbox</h1><div class="empty">No open inquiries.</div>'; return; }
+    el.innerHTML='<h1>Inbox · '+rows.length+'</h1>'+rows.map(r=>`
+      <div class="card" id="i-${r.id}"><h3>${r.subject||'Inquiry'}</h3>
+      <div class="meta">${r.from_phone?'📞 '+r.from_phone+'<br>':''}${r.body||''}<br><span style="color:var(--mut2)">${new Date(r.created_at).toLocaleString('en-KE')}</span></div>
+      <div class="row2"><button class="btn ok" data-resolve="${r.id}">Mark resolved</button></div></div>`).join('');
+    document.querySelectorAll('[data-resolve]').forEach(b=>b.onclick=async()=>{ try{ await A('admin_resolve',{i_id:Number(b.dataset.resolve)}); document.getElementById('i-'+b.dataset.resolve).remove(); }catch(e){ alert(e.message||e); } });
+  }catch(e){ el.innerHTML='<h1>Inbox</h1><div class="err">'+(e.message||e)+'</div>'; }
+}
+
+if(!sb){ document.getElementById('scr').innerHTML='<div class="err" style="margin:20px">Supabase didn’t load. Check config.js.</div>'; }
+else render();
+if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{})); }
+</script>
+</body>
+</html>
